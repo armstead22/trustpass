@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Code2, Terminal, Webhook } from "lucide-react";
 
-const curlExample = `curl -X POST https://api.trustpass.io/v1/verify \\
+const curlExample = `curl -X POST https://hellotrustpass.com/api/v1/verify \\
   -H "X-API-Key: tp_live_xxxxxxxxxxxxx" \\
   -H "Content-Type: application/json" \\
-  -d '{"email": "user@example.com", "accessType": "query", "purpose": "User verification"}'`;
+  -d '{"email": "user@example.com"}'`;
 
-const jsExample = `const res = await fetch("https://api.trustpass.io/v1/verify", {
+const jsExample = `const res = await fetch("https://hellotrustpass.com/api/v1/verify", {
   method: "POST",
   headers: {
     "X-API-Key": process.env.TRUSTPASS_API_KEY,
@@ -16,11 +16,9 @@ const jsExample = `const res = await fetch("https://api.trustpass.io/v1/verify",
   },
   body: JSON.stringify({
     email: "user@example.com",
-    accessType: "query",
-    purpose: "User verification",
   }),
 });
-const { passed, status, level } = await res.json();`;
+const { verified, status, level } = await res.json();`;
 
 export default function PartnerDocs() {
   return (

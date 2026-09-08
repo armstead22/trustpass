@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { auth, apiRequest } from "@/lib/queryClient";
+import { auth, apiRequest, API_BASE } from "@/lib/queryClient";
 
 export interface CurrentUser {
   id: number;
@@ -38,8 +38,39 @@ export function useAuth() {
   }, []);
 
   useEffect(() => {
-    if (auth.token) refresh();
-    else setLoading(false);
+    // On boot, try to refresh the access token using the httpOnly refresh cookie.
+    // This allows sessions to survive page reloads.
+    if (!auth.token) {
+      (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.accessToken) {
+              auth.set(data.accessToken);
+              // Fetch CSRF token for the refreshed session
+              try {
+                const csrfRes = await fetch(`${API_BASE}/api/auth/csrf-token`, {
+                  headers: { Authorization: `Bearer ${data.accessToken}` },
+                });
+                if (csrfRes.ok) {
+                  const csrfData = await csrfRes.json();
+                  auth.setCsrf(csrfData.csrfToken);
+                }
+              } catch {}
+            }
+          }
+        } catch {
+          // No refresh token cookie or expired — silently continue as logged out
+        }
+        setLoading(false);
+      })();
+    } else {
+      refresh();
+    }
   }, [refresh]);
 
   const login = useCallback(async (email: string, password: string) => {

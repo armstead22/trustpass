@@ -349,7 +349,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const input = verifyCredentialSchema.parse(req.body);
       const v = input.credential_id
         ? s.findVerificationByTxHash(input.credential_id)
-        : s.findVerificationByEmailHash(input.email_hash!);
+        : input.email_hash
+        ? s.findVerificationByEmailHash(input.email_hash)
+        : input.email
+        ? (() => { const u = s.findUserByEmail(input.email); return u ? s.getVerificationByUserId(u.id) : undefined; })()
+        : undefined;
       if (!v || v.status === "deleted") return res.status(404).json({ error: "Credential not found" });
       const user = s.getUserById(v.userId);
       if (!user) return res.status(404).json({ error: "Credential not found" });
@@ -462,7 +466,7 @@ function buildOpenApiSpec() {
   return {
     openapi: "3.1.0",
     info: { title: "TrustPass API", version: "1.0.0", description: "Verify once. Access everywhere." },
-    servers: [{ url: "/api/v1", description: "Partner API v1" }],
+    servers: [{ url: "https://hellotrustpass.com/api/v1", description: "Partner API v1" }],
     components: {
       securitySchemes: { ApiKeyAuth: { type: "apiKey", in: "header", name: "X-API-Key" } },
     },

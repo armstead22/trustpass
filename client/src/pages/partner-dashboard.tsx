@@ -21,7 +21,7 @@ export default function PartnerDashboard() {
   const usage = useQuery<any>({ queryKey: ["/api/v1/usage"], refetchOnWindowFocus: false });
 
   const verify = useMutation({
-    mutationFn: (email: string) => apiRequest("POST", "/api/v1/verify", { email, accessType: "query", purpose: "User verification" }),
+    mutationFn: (email: string) => apiRequest("POST", "/api/v1/verify", { email }),
     onSuccess: async (res) => setLookupResult(await res.json()),
     onError: async (e: any) => {
       try { setLookupResult({ passed: false, reason: e.message }); } catch { setLookupResult({ passed: false, reason: String(e) }); }
@@ -29,8 +29,8 @@ export default function PartnerDashboard() {
   });
 
   const registerHook = useMutation({
-    mutationFn: (url: string) => apiRequest("POST", "/api/v1/webhook/register", { webhookUrl: url }),
-    onSuccess: async (res) => { const d = await res.json(); toast({ title: "Webhook registered" }); setNewKey(null); },
+    mutationFn: (url: string) => apiRequest("POST", "/api/v1/webhook/register", { url, events: ["verified", "expired", "revoked"] }),
+    onSuccess: async (res) => { await res.json(); toast({ title: "Webhook registered" }); setNewKey(null); },
   });
 
   const rotate = useMutation({
@@ -44,9 +44,9 @@ export default function PartnerDashboard() {
       <p className="text-sm text-muted-foreground">Verify your customers and manage your API credentials.</p>
 
       <div className="mt-6 grid gap-6 md:grid-cols-3">
-        <Stat icon={Search} label="Total verifications" value={String(usage.data?.totalVerifications ?? 0)} />
-        <Stat icon={ShieldCheck} label="Successful" value={String(usage.data?.successfulVerifications ?? 0)} />
-        <Stat icon={BarChart3} label="Success rate" value={usage.data?.totalVerifications ? `${Math.round((usage.data.successfulVerifications / usage.data.totalVerifications) * 100)}%` : "—"} />
+        <Stat icon={Search} label="Total API calls" value={String(usage.data?.totalCalls ?? 0)} />
+        <Stat icon={ShieldCheck} label="Calls this month" value={String(usage.data?.callsThisMonth ?? 0)} />
+        <Stat icon={BarChart3} label="Avg response time" value={usage.data?.avgResponseMs ? `${usage.data.avgResponseMs}ms` : "—"} />
       </div>
 
       {/* Credential lookup */}
@@ -62,17 +62,17 @@ export default function PartnerDashboard() {
           </form>
           {lookupResult && (
             <div className="rounded-lg border border-border/60 p-4 text-sm" data-testid="div-lookup-result">
-              {lookupResult.passed ? (
+              {lookupResult.verified ? (
                 <div className="space-y-2">
                   <Badge style={{ background: "hsl(var(--gold)/0.15)", color: "hsl(var(--gold))" }}>VERIFIED · {lookupResult.level}</Badge>
                   <p className="text-muted-foreground">User is verified. Credential valid until {lookupResult.expiresAt && new Date(lookupResult.expiresAt).toLocaleDateString()}.</p>
                   <div className="rounded-md bg-muted/30 p-2">
-                    <p className="text-xs text-muted-foreground">Status / {lookupResult.status}</p>
-                    <p className="text-xs font-mono break-all">{lookupResult.credentialId}</p>
+                    <p className="text-xs text-muted-foreground">Status: {lookupResult.status}</p>
+                    {lookupResult.credentialId && <p className="text-xs font-mono break-all">{lookupResult.credentialId}</p>}
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2"><Badge variant="destructive">{lookupResult.status}</Badge> <span className="text-muted-foreground">{lookupResult.reason}</span></div>
+                <div className="flex items-center gap-2"><Badge variant="destructive">{lookupResult.status || "not found"}</Badge> <span className="text-muted-foreground">{lookupResult.error || lookupResult.reason}</span></div>
               )}
             </div>
           )}

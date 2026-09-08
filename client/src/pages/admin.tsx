@@ -30,9 +30,9 @@ export default function Admin() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={Users} label="Total users" value={m?.totalUsers ?? 0} />
-        <Stat icon={ShieldCheck} label="Verified users" value={m?.verifiedUsers ?? 0} />
-        <Stat icon={Building2} label="Active partners" value={m?.activePartners ?? 0} />
-        <Stat icon={ScrollText} label="API calls today" value={m?.apiCallsToday ?? 0} />
+        <Stat icon={ShieldCheck} label="Verified users" value={m?.totalVerifiedUsers ?? 0} />
+        <Stat icon={ScrollText} label="Verifications today" value={m?.verificationsToday ?? 0} />
+        <Stat icon={Building2} label="API calls today" value={m?.apiCallsToday ?? 0} />
       </div>
 
       {/* Pending verifications */}
@@ -42,15 +42,15 @@ export default function Admin() {
           <CardDescription>Manually approve or reject verifications (institutional tier review)</CardDescription>
         </CardHeader>
         <CardContent>
-          {verifications.data?.filter((v: any) => v.status === "pending_review").length === 0 ? (
+          {verifications.data?.filter((v: any) => v.status === "pending").length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">No verifications pending review.</p>
           ) : (
             <div className="divide-y divide-border/60">
-              {verifications.data?.filter((v: any) => v.status === "pending_review").map((v: any) => (
+              {verifications.data?.filter((v: any) => v.status === "pending").map((v: any) => (
                 <div key={v.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="text-sm font-medium">{v.userEmail}</p>
-                    <p className="text-xs text-muted-foreground">Level: {v.requestedLevel}</p>
+                    <p className="text-sm font-medium">User #{v.userId}</p>
+                    <p className="text-xs text-muted-foreground">Level: {v.level || "pending"}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => review.mutate({ id: v.id, action: "approve" })}><CheckCircle className="mr-1 h-3 w-3" /> Approve</Button>
@@ -103,9 +103,9 @@ export default function Admin() {
               <div key={log.id} className="py-2 text-xs">
                 <div className="flex justify-between">
                   <span className="font-mono text-muted-foreground">{log.action}</span>
-                  <span className="text-muted-foreground">{new Date(log.timestamp).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</span>
                 </div>
-                {log.details && <pre className="mt-0.5 text-muted-foreground/70 overflow-x-auto">{JSON.stringify(log.details, null, 0).slice(0, 200)}</pre>}
+                {log.metadata && log.metadata !== "{}" && <pre className="mt-0.5 text-muted-foreground/70 overflow-x-auto">{log.metadata.slice(0, 200)}</pre>}
               </div>
             ))}
           </div>

@@ -143,8 +143,9 @@ export const partnerAuthSchema = z.object({
 export const verifyCredentialSchema = z.object({
   credential_id: z.string().optional(),
   email_hash: z.string().optional(),
-}).refine((d) => d.credential_id || d.email_hash, {
-  message: "Provide credential_id or email_hash",
+  email: z.string().email().optional(),
+}).refine((d) => d.credential_id || d.email_hash || d.email, {
+  message: "Provide credential_id, email_hash, or email",
 });
 
 export const ROLE = {
